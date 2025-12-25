@@ -1,0 +1,19 @@
+{
+  "actorOutputSchemaVersion": 1,
+  "title": "SSH Command Execution Results",
+  "description": "Results from executing commands on remote devices via SSH",
+  "properties": {
+    "dataset": {
+      "type": "string",
+      "title": "Device Summary Table 📊",
+      "description": "Summary table showing device connection status, command execution results, and success rates",
+      "template": "{{links.apiDefaultDatasetUrl}}/items"
+    },
+    "keyValueStore": {
+      "type": "string",
+      "title": "Detailed Command Outputs 📝",
+      "description": "Full stdout/stderr for each device. Keys: device_{ip}_{port} for individual devices, execution_summary for overall stats",
+      "template": "{{links.apiDefaultKeyValueStoreUrl}}/keys"
+    }
+  }
+}

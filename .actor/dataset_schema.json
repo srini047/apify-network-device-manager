@@ -1,0 +1,50 @@
+{
+  "actorSpecification": 1,
+  "views": {
+    "overview": {
+      "title": "Execution Overview",
+      "description": "Per-device execution summary",
+      "transformation": {
+        "fields": [
+          "device",
+          "username",
+          "status",
+          "total_commands",
+          "successful",
+          "failed",
+          "success_rate",
+          "error"
+        ]
+      },
+      "display": {
+        "component": "table",
+        "properties": {
+          "device": {
+            "label": "Device"
+          },
+          "username": {
+            "label": "User"
+          },
+          "status": {
+            "label": "Connection Status"
+          },
+          "total_commands": {
+            "label": "Total Commands"
+          },
+          "successful": {
+            "label": "Succeeded"
+          },
+          "failed": {
+            "label": "Failed"
+          },
+          "success_rate": {
+            "label": "Success Rate"
+          },
+          "error": {
+            "label": "Error"
+          }
+        }
+      }
+    }
+  }
+}

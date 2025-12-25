@@ -212,5 +212,8 @@ async def main() -> None:
 
         # Log summary to console
         log_execution_summary(results)
+        
+        # Pay per event
+        await Actor.charge(event_name="device-execution", count=len(results))
 
         Actor.log.info("✓ Results stored successfully!")
