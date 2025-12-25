@@ -1,0 +1,25 @@
+{
+  "devices": [
+    {
+      "ip": "127.0.0.1",
+      "username": "root",
+      "password": "root",
+      "port": 2221
+    },
+    {
+      "ip": "127.0.0.1",
+      "username": "root",
+      "password": "root",
+      "port": 2222
+    },
+    {
+      "ip": "127.0.0.1",
+      "username": "root",
+      "password": "root",
+      "port": 2223
+    }
+  ],
+  "commands": [
+    "cat /etc/os-release"
+  ]
+}

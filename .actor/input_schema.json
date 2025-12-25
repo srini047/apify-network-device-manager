@@ -1,0 +1,67 @@
+{
+  "title": "Network Device Details",
+  "description": "List of network devices to fetch data",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "devices": {
+      "title": "Devices",
+      "type": "array",
+      "description": "List of devices to execute commands on",
+      "editor": "json",
+      "prefill": [
+        {
+          "ip": "192.168.1.1",
+          "username": "root",
+          "password": "root",
+          "port": 22
+        }
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "ip": {
+            "type": "string",
+            "title": "IP Address",
+            "description": "Device IP address",
+            "editor": "textfield",
+            "pattern": "^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username",
+            "description": "SSH username",
+            "editor": "textfield"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password",
+            "description": "SSH password",
+            "editor": "textfield"
+          },
+          "port": {
+            "type": "integer",
+            "title": "SSH Port",
+            "description": "SSH port number (default: 22 if not provided)",
+            "editor": "number",
+            "minimum": 1,
+            "maximum": 65535
+          }
+        },
+        "required": ["ip"]
+      }
+    },
+    "commands": {
+      "title": "Additional Commands",
+      "type": "array",
+      "description": "Additional commands to execute (will be combined with default commands, duplicates removed automatically)",
+      "editor": "stringList",
+      "placeholderValue": "ps aux",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    }
+  },
+  "required": ["devices"]
+}

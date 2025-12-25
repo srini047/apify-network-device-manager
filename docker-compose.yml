@@ -1,0 +1,37 @@
+services:
+  ssh-device1:
+    image: alpine-ssh:latest
+    container_name: ssh-device1
+    hostname: device1
+    ports:
+      - "2221:22"
+    environment:
+      - ROOT_PASSWORD=root
+    networks:
+      - ssh-network
+
+  ssh-device2:
+    image: alpine-ssh:latest
+    container_name: ssh-device2
+    hostname: device2
+    ports:
+      - "2222:22"
+    environment:
+      - ROOT_PASSWORD=root
+    networks:
+      - ssh-network
+
+  ssh-device3:
+    image: alpine-ssh:latest
+    container_name: ssh-device3
+    hostname: device3
+    ports:
+      - "2223:22"
+    environment:
+      - ROOT_PASSWORD=root
+    networks:
+      - ssh-network
+
+networks:
+  ssh-network:
+    driver: bridge
