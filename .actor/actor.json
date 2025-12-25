@@ -7,7 +7,9 @@
 	"buildTag": "latest",
 	"input": "./input_schema.json",
 	"output": "./output_schema.json",
-	"dataset": "./dataset_schema.json",
+	"storages": {
+        "dataset": "./dataset_schema.json"
+    },
 	"usesStandbyMode": true,
 	"meta": {
 		"author": "Sriniketh J",
