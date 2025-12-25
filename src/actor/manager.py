@@ -20,13 +20,12 @@ async def execute_commands_on_device(device: Device, commands: List[str]) -> Dev
         Actor.log.info(f"Connecting to {device.ip}:{device.port}...")
         
         commands = RUN_COMMANDS + commands # Append default commands if any
-        print("List of commands: ", commands)
 
         async with SSHClient(device) as client:
             result.connected = True
             Actor.log.info(f"✓ Connected to {device.ip}")
 
-            for command in RUN_COMMANDS:
+            for command in commands:
                 try:
                     Actor.log.info(f"Running on {device.ip}: {command}")
                     stdout, stderr, exit_code = await client.run_command(command)
