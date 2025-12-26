@@ -2,9 +2,10 @@
 AI Command Generator using Cohere API
 
 This module generates diagnostic commands based on problem descriptions
-using Cohere's language model.
+using Cohere's language model
 """
 
+from dataclasses import dataclass
 from enum import Enum
 import os
 from typing import List, Dict, Optional
@@ -21,33 +22,24 @@ class CommandSeverity(Enum):
     WARN = "warn"
 
 
+@dataclass
 class GeneratedCommand:
     """
     Represents a generated command with metadata
     """
-
-    def __init__(
-        self,
-        command: str,
-        severity: str,
-        description: str,
-        reasoning: str,
-    ):
-        self.command = command
-        self.severity = severity
-        self.description = description
-        self.reasoning = reasoning
+    command: str
+    severity: CommandSeverity
+    description: str
+    reasoning: str
 
     def to_dict(self) -> Dict:
         return {
             "command": self.command,
-            "severity": self.severity,
+            "severity": self.severity.value,
             "description": self.description,
             "reasoning": self.reasoning,
         }
 
-    def __repr__(self):
-        return f"GeneratedCommand(command='{self.command[:50]}...', severity='{self.severity}')"
 
 
 class CohereClient:
@@ -195,7 +187,7 @@ IMPORTANT:
                         "content": prompt,
                     }
                 ],
-                temperature=0.3,
+                temperature=0.7,
                 response_format={
                     "type": "json_object",
                     "schema": {
@@ -277,7 +269,7 @@ IMPORTANT:
 
                 cmd = GeneratedCommand(
                     command=cmd_data["command"],
-                    severity=cmd_data["severity"],
+                    severity=CommandSeverity(cmd_data["severity"]),
                     description=cmd_data["description"],
                     reasoning=cmd_data["reasoning"],
                 )
@@ -318,13 +310,14 @@ def filter_commands_by_severity(
     )
 
     filtered_set = set(filtered)
+
     for cmd in commands:
         included = cmd in filtered_set
         Actor.log.info(
             "  %s [%s] %s",
             "✓ INCLUDED" if included else "✗ EXCLUDED",
-            cmd.severity.upper(),
-            f"{cmd.command[:50]}..." if len(cmd.command) > 50 else cmd.command,
+            cmd.severity.value.upper(),
+            f"{cmd.command}" if len(cmd.command) > 50 else cmd.command,
         )
 
     return [cmd.command for cmd in filtered]

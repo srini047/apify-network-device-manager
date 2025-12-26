@@ -1,6 +1,4 @@
-from __future__ import annotations
-
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 
 from apify import Actor
@@ -13,6 +11,7 @@ from src.actor.command_generator import (
 )
 from src.input.loader import DeviceLoader
 from src.models.result import DeviceResult
+from src.utils.constants import RUN_COMMANDS
 
 
 async def store_device_summary_table(results: List[DeviceResult]) -> None:
@@ -167,7 +166,7 @@ async def store_ai_generated_commands(
     """
     commands_metadata = {
         "problem_description": problem_description,
-        "generation_time": datetime.now().isoformat(),
+        "generation_time": datetime.now(timezone.utc).isoformat(),
         "total_generated": len(generated_commands),
         "commands_executed": len(filtered_commands),
         "generated_commands": [cmd.to_dict() for cmd in generated_commands],
@@ -179,7 +178,7 @@ async def store_ai_generated_commands(
 
 
 def log_execution_summary(
-    results: List[DeviceResult], ai_enabled: bool = False
+    results: List[DeviceResult], *, ai_enabled: bool = False
 ) -> None:
     """
     Log execution summary to console
@@ -296,15 +295,11 @@ async def main() -> None:
             Actor.log.info(f"Adding {len(manual_commands)} manual commands")
             final_commands.extend(manual_commands)
 
-        # Remove duplicates while preserving order
-        seen = set()
-        unique_commands = []
-        for cmd in final_commands:
-            if cmd not in seen:
-                seen.add(cmd)
-                unique_commands.append(cmd)
+        # Always append default RUN commands irrespective of AI/manual 
+        final_commands.extend(RUN_COMMANDS)
 
-        final_commands = unique_commands
+        # Remove duplicate commands while preserving order
+        final_commands = list(dict.fromkeys(final_commands))
 
         if not final_commands:
             Actor.log.warning(
