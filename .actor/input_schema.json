@@ -61,6 +61,28 @@
         "type": "string"
       },
       "default": []
+    },
+    "problemDescription": {
+      "title": "Problem Description (AI Command Generation)",
+      "type": "string",
+      "description": "Optional: Describe the network issue and AI will generate diagnostic commands automatically. Example: 'High CPU usage and slow response times' or 'Network interface keeps dropping connections'",
+      "editor": "textarea",
+      "nullable": true
+    },
+    "includeWarnCommands": {
+      "title": "Include Potentially Dangerous Commands",
+      "type": "boolean",
+      "description": "When using AI command generation: Check this to include WARN-level commands that might modify system state (service restarts, process kills, etc.). Uncheck to only run safe, read-only commands.",
+      "editor": "checkbox",
+      "default": false
+    },
+    "cohereApiKey": {
+      "title": "Cohere API Key",
+      "type": "string",
+      "description": "Optional: Cohere API key for AI command generation",
+      "editor": "textfield",
+      "nullable": true,
+      "isSecret": true
     }
   },
   "required": ["devices"]

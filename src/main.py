@@ -1,13 +1,17 @@
-from __future__ import annotations
-
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 
 from apify import Actor
 
-from src.input.loader import DeviceLoader
 from src.actor.manager import execute_on_all_devices
+from src.actor.command_generator import (
+    AICommandGenerator,
+    filter_commands_by_severity,
+    GeneratedCommand,
+)
+from src.input.loader import DeviceLoader
 from src.models.result import DeviceResult
+from src.utils.constants import RUN_COMMANDS
 
 
 async def store_device_summary_table(results: List[DeviceResult]) -> None:
@@ -152,7 +156,30 @@ async def store_overall_summary(results: List[DeviceResult]) -> None:
     Actor.log.info("✓ Stored overall summary")
 
 
-def log_execution_summary(results: List[DeviceResult]) -> None:
+async def store_ai_generated_commands(
+    generated_commands: List[GeneratedCommand],
+    filtered_commands: List[str],
+    problem_description: str,
+) -> None:
+    """
+    Store AI-generated commands metadata in Key-Value Store
+    """
+    commands_metadata = {
+        "problem_description": problem_description,
+        "generation_time": datetime.now(timezone.utc).isoformat(),
+        "total_generated": len(generated_commands),
+        "commands_executed": len(filtered_commands),
+        "generated_commands": [cmd.to_dict() for cmd in generated_commands],
+        "executed_commands": filtered_commands,
+    }
+
+    await Actor.set_value("ai_generated_commands", commands_metadata)
+    Actor.log.info("✓ Stored AI-generated commands metadata")
+
+
+def log_execution_summary(
+    results: List[DeviceResult], *, ai_enabled: bool = False
+) -> None:
     """
     Log execution summary to console
     """
@@ -163,13 +190,66 @@ def log_execution_summary(results: List[DeviceResult]) -> None:
         sum(1 for cmd in r.commands if cmd.success) for r in results
     )
 
-    Actor.log.info(f"\n{'=' * 50}")
+    Actor.log.info(f"{'=' * 50}")
     Actor.log.info("EXECUTION SUMMARY:")
+    if ai_enabled:
+        Actor.log.info("Mode: AI-Generated Commands")
     Actor.log.info(
         f"  Devices: {successful_devices} connected, {failed_devices} failed"
     )
     Actor.log.info(f"  Commands: {successful_commands}/{total_commands} succeeded")
-    Actor.log.info(f"{'=' * 50}\n")
+    Actor.log.info(f"{'=' * 50}")
+
+
+async def generate_ai_commands(
+    problem_description: str,
+    include_warn_commands: bool,
+    api_key: str = None,
+) -> List[str]:
+    """
+    Generate commands using AI based on problem description
+
+    Returns:
+        List of command strings to execute
+    """
+    Actor.log.info("" + "=" * 50)
+    Actor.log.info("AI COMMAND GENERATION")
+    Actor.log.info("=" * 50)
+    Actor.log.info(f"Problem: {problem_description}")
+    Actor.log.info(f"Include WARN commands: {include_warn_commands}")
+
+    try:
+        # Initialize AI command generator
+        generator = AICommandGenerator(api_key=api_key)
+
+        # Generate commands
+        generated_commands = await generator.generate_commands(
+            problem_description=problem_description,
+            include_warn_commands=include_warn_commands,
+        )
+
+        # Filter by severity
+        filtered_commands = filter_commands_by_severity(
+            generated_commands,
+            include_warn=include_warn_commands,
+        )
+
+        # Store AI command metadata
+        await store_ai_generated_commands(
+            generated_commands,
+            filtered_commands,
+            problem_description,
+        )
+
+        Actor.log.info(f"✓ Generated {len(filtered_commands)} commands to execute")
+        Actor.log.info("=" * 50 + "")
+
+        return filtered_commands
+
+    except Exception as e:
+        Actor.log.error(f"Failed to generate AI commands: {str(e)}")
+        Actor.log.warning("Falling back to manual commands only")
+        return []
 
 
 async def main() -> None:
@@ -180,10 +260,13 @@ async def main() -> None:
         # Load input configuration
         input_data = await Actor.get_input() or {}
         raw_devices = input_data.get("devices", [])
-        commands = input_data.get("commands", [])
+        manual_commands = input_data.get("commands", [])
+        problem_description = input_data.get("problemDescription", "")
+        exec_warn_commands = input_data.get("includeWarnCommands", False)
+        cohere_api_key = input_data.get("cohereApiKey", "")
 
         if not raw_devices:
-            Actor.log.warning("No devices provided in input")
+            Actor.log.error("No devices provided in input")
             return
 
         # Parse device configurations
@@ -193,10 +276,48 @@ async def main() -> None:
         for device in devices:
             Actor.log.info(f"  → {device.ip}:{device.port} (user={device.username})")
 
+        # Determine command source: AI-generated or manual
+        ai_enabled = False
+        final_commands = []
+
+        if problem_description and problem_description.strip():
+            # Use AI to generate commands
+            Actor.log.info("AI Command Generation enabled")
+            ai_commands = await generate_ai_commands(
+                problem_description=problem_description.strip(),
+                include_warn_commands=exec_warn_commands,
+                api_key=cohere_api_key,
+            )
+            final_commands.extend(ai_commands)
+            ai_enabled = True
+
+        if manual_commands:
+            Actor.log.info(f"Adding {len(manual_commands)} manual commands")
+            final_commands.extend(manual_commands)
+
+        # Always append default RUN commands irrespective of AI/manual 
+        final_commands.extend(RUN_COMMANDS)
+
+        # Remove duplicate commands while preserving order
+        final_commands = list(dict.fromkeys(final_commands))
+
+        if not final_commands:
+            Actor.log.warning(
+                "No commands to execute. Provide either a problem description "
+                "for AI generation or manual commands."
+            )
+            return
+
+        Actor.log.info(
+            f"Total commands to execute (other than default commands): {len(final_commands)}"
+        )
+        for i, cmd in enumerate(final_commands, 1):
+            Actor.log.info(f"  {i}. {cmd}")
+
         # Execute commands on all devices
-        Actor.log.info("\nStarting command execution on all devices...")
-        results = await execute_on_all_devices(devices, commands)
-        Actor.log.info("✓ Command execution completed\n")
+        Actor.log.info("Starting command execution on all devices...")
+        results = await execute_on_all_devices(devices, final_commands)
+        Actor.log.info("✓ Command execution completed")
 
         # Store results in Dataset (visible in OUTPUT tab as table)
         Actor.log.info("Storing results in Dataset...")
@@ -207,12 +328,12 @@ async def main() -> None:
         await store_command_outputs_kv(results)
 
         # Store overall summary
-        Actor.log.info("\nStoring overall summary...")
+        Actor.log.info("Storing overall summary...")
         await store_overall_summary(results)
 
         # Log summary to console
-        log_execution_summary(results)
-        
+        log_execution_summary(results=results, ai_enabled=ai_enabled)
+
         # Pay per event
         await Actor.charge(event_name="device-execution", count=len(results))
 
