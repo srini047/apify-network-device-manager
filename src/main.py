@@ -204,7 +204,7 @@ def log_execution_summary(
 async def generate_ai_commands(
     problem_description: str,
     include_warn_commands: bool,
-    api_key: str = None,
+    api_key: str = "",
 ) -> List[str]:
     """
     Generate commands using AI based on problem description

@@ -41,7 +41,6 @@ class GeneratedCommand:
         }
 
 
-
 class CohereClient:
     """
     Cohere Client for interacting with the Cohere API
@@ -74,6 +73,7 @@ class CohereClient:
             base_url=self.api_base_url,
             client_name=self.client_name,
             timeout=self.timeout,
+            log_warning_experimental_features=False,
         )
 
     def get_client(self):
@@ -168,9 +168,7 @@ IMPORTANT:
         Returns:
             List of GeneratedCommand objects
         """
-        Actor.log.info(
-            f"Generating commands for problem: {problem_description[:100]}..."
-        )
+        Actor.log.info("Generating commands to dissect the problem")
 
         # Build the prompt
         prompt = self._build_prompt(problem_description, include_warn_commands)
@@ -247,7 +245,7 @@ IMPORTANT:
             else:
                 raise ValueError(f"Unexpected response format: {response}")
 
-            Actor.log.info(f"Parsing JSON response: {content}...")
+            Actor.log.info(f"Parsing JSON response: {content}")
 
             # Parse JSON
             data = json.loads(content)
@@ -294,9 +292,9 @@ def filter_commands_by_severity(
     """
     Filter commands based on severity level
     """
-    allowed_severities = {CommandSeverity.SAFE.value}
+    allowed_severities = {CommandSeverity.SAFE}
     if include_warn:
-        allowed_severities.add(CommandSeverity.WARN.value)
+        allowed_severities.add(CommandSeverity.WARN)
 
     filtered = [
         cmd for cmd in commands if cmd.severity in allowed_severities
@@ -309,15 +307,15 @@ def filter_commands_by_severity(
         len(commands),
     )
 
-    filtered_set = set(filtered)
+    filtered_commands = {cmd.command for cmd in filtered}
 
     for cmd in commands:
-        included = cmd in filtered_set
+        included = cmd.command in filtered_commands
         Actor.log.info(
             "  %s [%s] %s",
             "✓ INCLUDED" if included else "✗ EXCLUDED",
             cmd.severity.value.upper(),
-            f"{cmd.command}" if len(cmd.command) > 50 else cmd.command,
+            cmd.command if len(cmd.command) <= 50 else f"{cmd.command}",
         )
 
     return [cmd.command for cmd in filtered]
