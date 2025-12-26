@@ -21,5 +21,8 @@
   ],
   "commands": [
     "cat /etc/os-release"
-  ]
+  ],
+  "problemDescription": "Check the device's disk usage and report if any partition is above 80% capacity.",
+  "includeWarnCommands": false,
+  "cohereApiKey": "YOUR_COHERE_API_KEY"
 }
