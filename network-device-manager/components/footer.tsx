@@ -42,14 +42,14 @@ export function Footer() {
                   Documentation
                 </Link>
               </li>
-              <li>
+              {/* <li>
                 <Link
                   href="/monitor"
                   className="hover:text-primary transition-colors"
                 >
                   Network Monitor
                 </Link>
-              </li>
+              </li> */}
             </ul>
           </div>
           <div>

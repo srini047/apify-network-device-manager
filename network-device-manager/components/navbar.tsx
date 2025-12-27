@@ -35,12 +35,6 @@ export function Navbar() {
             Analytics
           </Link>
           <Link
-            href="/analytics"
-            className="transition-colors hover:text-foreground"
-          >
-            Analytics
-          </Link>
-          <Link
             href="/docs"
             className="transition-colors hover:text-foreground"
           >
