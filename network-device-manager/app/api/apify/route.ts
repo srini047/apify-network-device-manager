@@ -3,17 +3,16 @@ import { ApifyClient } from "apify-client";
 
 export async function POST(req: NextRequest) {
   try {
-    const { apifyToken, ...input } = await req.json();
+    const input = await req.json();
 
-    if (!apifyToken) {
+    if (!process.env.APIFY_TOKEN) {
       return NextResponse.json(
-        { error: "Apify Token is required" },
-        { status: 400 }
+        { error: "Server error configuration" },
+        { status: 500 }
       );
     }
 
-    const client = new ApifyClient({ token: apifyToken });
-
+    const client = new ApifyClient({ token: process.env.APIFY_TOKEN });
     // Start the Actor
     const run = await client.actor("vMJSTjEps2zDrzsA5").call(input);
 
@@ -27,7 +26,7 @@ export async function POST(req: NextRequest) {
       items,
     });
   } catch (error: any) {
-    console.error("[v0] API Route Error:", error.message);
+    console.error("API Route Error:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

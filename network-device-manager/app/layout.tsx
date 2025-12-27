@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" });
 export const metadata: Metadata = {
   title: "NetMgr AI | Network Device Manager",
   description: "AI-powered network device management and SSH orchestration.",
-  generator: "v0.app",
+  generator: "Next.js",
 };
 
 export default function RootLayout({

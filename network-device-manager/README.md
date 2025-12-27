@@ -1,36 +1,71 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# NetMgr AI — Network Device Manager
 
-## Getting Started
+A small Next.js app for orchestrating SSH commands across network devices and generating automated commands with AI. The app integrates with an Apify Actor to perform device connections and command execution, and displays structured dataset results.
 
-First, run the development server:
+Features
+- Device management form and payload preview
+- Run Apify Actor from the browser with an API token
+- AI-assisted command generation (Cohere integration optional)
+- Results viewer: dataset table + raw key-value output
+- Sonner-powered toasts and Tailwind-based UI
+
+**Live Actor**: https://apify.com/srini047/network-device-manager
+
+## Installation
+
+- Requirements: Node.js 18+ and a package manager (npm / pnpm / yarn)
+
+```bash
+cd network-device-manager
+npm install
+```
+
+## Environment
+
+Create a `.env` (or set env vars in your platform) with the keys you need. Example variables used by the app:
+
+- `APIFY_TOKEN` — optional local default token (the UI accepts a token in the dashboard)
+- `COHERE_API_KEY` — optional, used if you enable Cohere AI command generation
+
+The app also accepts the Apify token from the dashboard input (recommended for testing with multiple accounts).
+
+## Run locally
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Visit 🌐: http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Usage
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Open the dashboard: [app/dashboard/page.tsx](app/dashboard/page.tsx)
+- Add one or more devices (IP, username, password/port)
+- Optionally provide Cohere API key for AI command generation
+- Click **Run Actor** to dispatch the job — you will see a toast on success or failure
+- Export the `INPUT.json` to be used elsewhere too
+- Reset to default values if you feel you have messed up
 
-## Learn More
+## Actor integration
 
-To learn more about Next.js, take a look at the following resources:
+The app calls your Apify Actor via the JS SDK from the server route at `app/api/apify/route.ts`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- The route creates an `ApifyClient` with the provided token and calls the Actor with the payload.
+- After the Actor finishes, the route reads the Actor run's default dataset and returns `items` to the client.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+If you need to change which Actor is invoked, edit `app/api/apify/route.ts` and replace the Actor id.
 
-## Deploy on Vercel
+## Troubleshooting
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- If counts show incorrectly in the UI, the app now ignores any `OVERALL SUMMARY` rows in the dataset and derives totals from per-device rows.
+- Failed connection entries are detected by inspecting `status` / `error` fields and will render in destructive (red) styling.
+- If the actor returns unexpected JSON, paste the full response here and the UI logic can be adjusted.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## License
+
+MIT
+
+## Useful links
+- Apify JS SDK Guides: https://docs.apify.com/sdk/js/docs/guides/apify-platform
+- Actor Page: https://apify.com/srini047/network-device-manager
+

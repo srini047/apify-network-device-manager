@@ -8,28 +8,26 @@ import { CommandInput } from "@/components/dashboard/command-input";
 import { AIInput } from "@/components/dashboard/ai-input";
 import { ExecutionResults } from "@/components/dashboard/execution-results";
 import { Button } from "@/components/ui/button";
-import { Play, RotateCcw, Save, Key, Eye, EyeOff } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
+import { Play, RotateCcw, Save } from "lucide-react";
 import { toast } from "sonner";
 
+const defaultInputData = {
+  devices: [
+    {
+      ip: "192.168.107.3",
+      username: "root",
+      password: "root",
+      port: 22,
+    },
+  ],
+  commands: ["cat /etc/os-release"],
+  problemDescription: "",
+  includeWarnCommands: false,
+  cohereApiKey: "",
+};
+
 export default function Dashboard() {
-  const [apifyKey, setApifyKey] = useState("");
-  const [inputData, setInputData] = useState({
-    devices: [
-      {
-        ip: "192.168.107.3",
-        username: "root",
-        password: "root",
-        port: 22,
-      },
-    ],
-    commands: ["cat /etc/os-release"],
-    problemDescription: "",
-    includeWarnCommands: false,
-    cohereApiKey: "",
-  });
+  const [inputData, setInputData] = useState(defaultInputData);
 
   const [isExecuting, setIsExecuting] = useState(false);
   const [results, setResults] = useState<any>(null);
@@ -47,7 +45,8 @@ export default function Dashboard() {
 
     if (!hasValidIp) {
       toast.error("Invalid device IP", {
-        description: "At least one device must have a valid IPv4 address before running the Actor.",
+        description:
+          "At least one device must have a valid IPv4 address before running the Actor.",
       });
       return;
     }
@@ -57,8 +56,14 @@ export default function Dashboard() {
       const response = await fetch("/api/apify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...inputData, apifyToken: apifyKey }),
+        body: JSON.stringify({ ...inputData }),
       });
+
+      if (!response.ok) {
+        const error = await response.json();
+        toast.error(error.message || `HTTP ${response.status}`);
+      }
+
       const data = await response.json();
       setResults(data);
       if (!data?.error) {
@@ -69,10 +74,27 @@ export default function Dashboard() {
         toast.error("Actor Run Failed", { description: data.error });
       }
     } catch (error) {
-      console.error("[v0] Execution error:", error);
       toast.error("Execution error", { description: String(error) });
     } finally {
       setIsExecuting(false);
+    }
+  };
+
+  const handleExport = () => {
+    try {
+      const json = JSON.stringify(inputData, null, 2);
+      const blob = new Blob([json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "INPUT.json";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success("Exported", { description: "JSON Exported" });
+    } catch (e) {
+      toast.error("Export failed", { description: String(e) });
     }
   };
 
@@ -92,7 +114,11 @@ export default function Dashboard() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setInputData({ ...inputData })}
+                    onClick={() => {
+                      setInputData(defaultInputData);
+                      setResults(null);
+                    }}
+                    disabled={isExecuting}
                   >
                     <RotateCcw className="mr-2 h-4 w-4" /> Reset
                   </Button>
@@ -110,42 +136,6 @@ export default function Dashboard() {
                   </Button>
                 </div>
               </div>
-
-              <Card className="glass-card p-4 border-accent/20 bg-accent/5">
-                <div className="flex flex-col md:flex-row md:items-center gap-4">
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Key className="h-4 w-4 text-accent" />
-                    <Label htmlFor="apify-key" className="text-sm font-bold">
-                      Apify API Token
-                    </Label>
-                  </div>
-                  <div className="relative flex-1 md:flex-initial">
-                    <Input
-                      id="apify-key"
-                      type={showKey ? "text" : "password"}
-                      placeholder="apify_api_..."
-                      className="h-9 bg-background/50"
-                      value={apifyKey}
-                      onChange={(e) => setApifyKey(e.target.value)}
-                    />
-                    {/* added button for password visibility */}
-                    <button
-                      className="absolute right-1 top-1 h-7 w-7 text-muted-foreground/50 hover:text-foreground"
-                      type="button"
-                      onClick={() => setShowKey(!showKey)}
-                    >
-                      {showKey ? (
-                        <EyeOff className="h-3.5 w-3.5" />
-                      ) : (
-                        <Eye className="h-3.5 w-3.5" />
-                      )}
-                    </button>
-                  </div>
-                  <p className="text-[10px] text-muted-foreground italic md:max-w-xs">
-                    Required to trigger the Apify Actor from your browser.
-                  </p>
-                </div>
-              </Card>
 
               <DeviceForm
                 devices={inputData.devices}
@@ -177,7 +167,12 @@ export default function Dashboard() {
                 <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
                   Payload Preview
                 </h3>
-                <Button variant="ghost" size="sm" className="h-8">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8"
+                  onClick={handleExport}
+                >
                   <Save className="h-4 w-4 mr-2" /> Export
                 </Button>
               </div>

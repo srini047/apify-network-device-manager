@@ -70,6 +70,7 @@ export function BentoFeatures() {
           <h4 className="font-bold">Dataset Export</h4>
           <p className="text-xs text-muted-foreground mt-1">
             Export results to CSV, JSON, or tabular view.
+            (from Apify Page)
           </p>
         </div>
       </div>

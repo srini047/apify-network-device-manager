@@ -144,6 +144,8 @@ export function DeviceForm({
               <Input
                 type="number"
                 placeholder="22"
+                min="1"
+                max="65535"
                 className="h-9 px-2"
                 value={device.port ?? 22}
                 onChange={(e) =>
