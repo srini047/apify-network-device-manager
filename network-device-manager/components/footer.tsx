@@ -13,7 +13,7 @@ export function Footer() {
             >
               <Shield className="h-6 w-6 text-primary" />
               <span>
-                NetMgr <span className="text-primary">AI</span>
+                NetManager <span className="text-primary">AI</span>
               </span>
             </Link>
             <p className="text-muted-foreground text-sm max-w-sm">
@@ -69,7 +69,7 @@ export function Footer() {
           </div>
         </div>
         <div className="pt-8 border-t border-border/20 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-muted-foreground">
-          <p>© 2025 NetMgr AI. All rights reserved.</p>
+          <p>© 2025 NetManager AI. All rights reserved.</p>
           <div className="flex items-center gap-1">
             Created with{" "}
             <Heart className="h-3 w-3 text-destructive fill-destructive" /> by{" "}

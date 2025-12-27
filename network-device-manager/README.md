@@ -1,4 +1,4 @@
-# NetMgr AI — Network Device Manager
+# Net Manager AI — Network Device Manager
 
 A small Next.js app for orchestrating SSH commands across network devices and generating automated commands with AI. The app integrates with an Apify Actor to perform device connections and command execution, and displays structured dataset results.
 
