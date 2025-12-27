@@ -8,9 +8,9 @@ import { useState } from "react";
 
 interface Device {
   ip: string;
-  username?: string;
-  password?: string;
-  port?: number;
+  username: string;
+  password: string;
+  port: number;
 }
 
 export function DeviceForm({
