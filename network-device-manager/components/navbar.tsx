@@ -28,12 +28,12 @@ export function Navbar() {
           >
             Dashboard
           </Link>
-          <Link
+          {/* <Link
             href="/monitor"
             className="transition-colors hover:text-foreground"
           >
             Monitor
-          </Link>
+          </Link> */}
           <Link
             href="/docs"
             className="transition-colors hover:text-foreground"
