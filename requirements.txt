@@ -4,3 +4,4 @@
 apify < 4.0.0
 asyncssh == 2.22.0
 cohere == 5.20.1
+pymongo == 4.15.5
