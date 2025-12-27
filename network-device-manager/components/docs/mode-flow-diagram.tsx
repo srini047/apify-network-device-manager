@@ -116,7 +116,7 @@ export function ModeFlowDiagram({ mode }: ModeFlowDiagramProps) {
                   <h3 className="font-semibold">Live Monitoring</h3>
                 </div>
                 <p className="text-sm text-muted-foreground ml-11">
-                  Access real-time telemetry through the NetGuard AI Dashboard
+                  Access real-time telemetry through the NetManager AI Dashboard
                 </p>
               </div>
             </div>
@@ -263,7 +263,7 @@ export function ModeFlowDiagram({ mode }: ModeFlowDiagramProps) {
                   <h3 className="font-semibold">Live Monitoring</h3>
                 </div>
                 <p className="text-sm text-muted-foreground ml-11">
-                  Access real-time telemetry through the NetGuard AI Dashboard
+                  Access real-time telemetry through the NetManager AI Dashboard
                 </p>
               </div>
             </div>
@@ -435,7 +435,7 @@ export function ModeFlowDiagram({ mode }: ModeFlowDiagramProps) {
                 <h3 className="font-semibold">Live Monitoring</h3>
               </div>
               <p className="text-sm text-muted-foreground ml-11">
-                Access real-time telemetry through the NetGuard AI Dashboard
+                Access real-time telemetry through the NetManager AI Dashboard
               </p>
             </div>
           </div>
