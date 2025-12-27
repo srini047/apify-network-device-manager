@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useChat } from "@ai-sdk/react";
+import { useChat } from '@ai-sdk/react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -15,7 +15,6 @@ import {
   Globe,
   Languages,
 } from "lucide-react";
-import { DefaultChatTransport } from "ai";
 
 export function TerminalChat({ uri, context }: { uri: string; context: any }) {
   const [isRecording, setIsRecording] = useState(false);
@@ -28,20 +27,42 @@ export function TerminalChat({ uri, context }: { uri: string; context: any }) {
   const [translatedMessages, setTranslatedMessages] = useState<
     Record<string, string>
   >({});
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollOuterRef = useRef<HTMLDivElement | null>(null);
+  const scrollInnerRef = useRef<HTMLDivElement | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
 
-  const { messages, input, setInput, handleSubmit, status } = useChat({
-    transport: new DefaultChatTransport({ api: "/api/mongodb/query" }),
+  // useChat configuration simplified for maximum reliability
+  const { messages, input, setInput, handleSubmit, isLoading } = useChat({
+    api: "/api/mongodb/query",
     body: { connectionString: uri, context },
+    initialMessages: [],
   });
 
+  // Map isLoading to status for compatibility
+  const status = isLoading ? "streaming" : "ready";
+
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    // scroll to bottom when messages change
+    try {
+      const target = scrollInnerRef.current ?? scrollOuterRef.current;
+      if (target) {
+        target.scrollTop = target.scrollHeight;
+      }
+    } catch (err) {
+      // ignore scroll errors
+      // console.warn("Scroll error", err);
     }
   }, [messages]);
+
+  // useEffect(() => {
+  //   console.log(
+  //     "TerminalChat status:",
+  //     status,
+  //     "Input length:",
+  //     input.length 
+  //   );
+  // }, [status, input]);
 
   const startRecording = async () => {
     try {
@@ -67,12 +88,20 @@ export function TerminalChat({ uri, context }: { uri: string; context: any }) {
   };
 
   const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      mediaRecorderRef.current.stream
-        .getTracks()
-        .forEach((track) => track.stop());
+    try {
+      if (mediaRecorderRef.current && isRecording) {
+        mediaRecorderRef.current.stop();
+        setIsRecording(false);
+        try {
+          mediaRecorderRef.current.stream
+            .getTracks()
+            .forEach((track) => track.stop());
+        } catch {
+          /* ignore */
+        }
+      }
+    } catch (err) {
+      console.error("Stop recording error:", err);
     }
   };
 
@@ -88,7 +117,7 @@ export function TerminalChat({ uri, context }: { uri: string; context: any }) {
         body: formData,
       });
       const data = await response.json();
-      if (data.transcript) {
+      if (data?.transcript) {
         setInput(data.transcript);
       }
     } catch (err) {
@@ -110,7 +139,7 @@ export function TerminalChat({ uri, context }: { uri: string; context: any }) {
         body: JSON.stringify({ text, targetLocale: locale }),
       });
       const data = await response.json();
-      if (data.translatedText) {
+      if (data?.translatedText) {
         setTranslatedMessages((prev) => ({
           ...prev,
           [messageId]: data.translatedText,
@@ -135,7 +164,7 @@ export function TerminalChat({ uri, context }: { uri: string; context: any }) {
         }),
       });
       const data = await response.json();
-      if (data.audio_content) {
+      if (data?.audio_content) {
         const audio = new Audio(`data:audio/wav;base64,${data.audio_content}`);
         audio.play();
       }
@@ -173,19 +202,22 @@ export function TerminalChat({ uri, context }: { uri: string; context: any }) {
         </div>
       </div>
 
-      <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-        <div className="space-y-4">
+      <ScrollArea className="flex-1 p-0" ref={scrollOuterRef as any}>
+        {/* inner container we control scrolling on */}
+        <div
+          ref={scrollInnerRef}
+          className="p-4 space-y-4 overflow-auto h-full"
+        >
           {messages.length === 0 && (
             <div className="text-zinc-600 italic text-xs animate-pulse">
               {">"} Pipeline connected. Awaiting telemetry queries...
             </div>
           )}
-          {messages.map((m) => (
+
+          {messages.map((m: any) => (
             <div
               key={m.id}
-              className={`flex flex-col ${
-                m.role === "user" ? "items-end" : "items-start"
-              }`}
+              className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
             >
               <div
                 className={`max-w-[85%] px-3 py-2 rounded-lg ${
@@ -197,9 +229,11 @@ export function TerminalChat({ uri, context }: { uri: string; context: any }) {
                 <div className="flex items-center gap-2 mb-1 opacity-50 text-[10px] uppercase font-bold tracking-tighter">
                   <span>{m.role === "user" ? "ADMIN" : "AI_CORE"}</span>
                 </div>
+
                 <div className="text-xs leading-relaxed whitespace-pre-wrap">
                   {translatedMessages[m.id] || m.content}
                 </div>
+
                 {m.role === "assistant" && (
                   <div className="flex gap-2 mt-2">
                     <Button
@@ -215,6 +249,7 @@ export function TerminalChat({ uri, context }: { uri: string; context: any }) {
                         <Volume2 className="h-3 w-3" />
                       )}
                     </Button>
+
                     {selectedLanguage !== "en-IN" &&
                       !translatedMessages[m.id] && (
                         <Button
@@ -236,23 +271,35 @@ export function TerminalChat({ uri, context }: { uri: string; context: any }) {
               </div>
             </div>
           ))}
-          {status === "submitted" ||
-            (status === "streaming" && (
-              <div className="flex items-center gap-2 text-zinc-600">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                <span className="text-[10px] uppercase tracking-widest">
-                  Processing Query...
-                </span>
-              </div>
-            ))}
+
+          {(status === "submitted" || status === "streaming") && (
+            <div className="flex items-center gap-2 text-zinc-600">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              <span className="text-[10px] uppercase tracking-widest">
+                Processing Query...
+              </span>
+            </div>
+          )}
         </div>
       </ScrollArea>
 
       <form
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
-          if (!input.trim() || status !== "ready") return;
-          handleSubmit(e);
+          console.log("Attempting to submit terminal input:", input);
+          if (
+            !input.trim() ||
+            status === "submitted" ||
+            status === "streaming"
+          ) {
+            return;
+          }
+
+          try {
+            await handleSubmit(e);
+          } catch (err: any) {
+            console.log("Submit error:", err.message);
+          }
         }}
         className="p-3 bg-zinc-950/50 border-t border-zinc-800 flex gap-2"
       >
@@ -269,6 +316,7 @@ export function TerminalChat({ uri, context }: { uri: string; context: any }) {
           onMouseUp={stopRecording}
           onMouseLeave={stopRecording}
           disabled={recordingLoading}
+          aria-pressed={isRecording}
         >
           {recordingLoading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -278,18 +326,20 @@ export function TerminalChat({ uri, context }: { uri: string; context: any }) {
             <Mic className="h-4 w-4" />
           )}
         </Button>
+
         <Input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Enter command or hold Mic for STT..."
           className="flex-1 bg-zinc-950 border-zinc-800 focus:border-primary/50 text-xs h-9"
-          disabled={status !== "ready"}
+          disabled={status === "submitted" || status === "streaming"}
         />
+
         <Button
           type="submit"
           size="icon"
           className="h-9 w-9 bg-primary/20 text-primary hover:bg-primary/30 border border-primary/20"
-          disabled={!input.trim() || status !== "ready"}
+          disabled={!(input?.trim()) || status !== "ready"}
         >
           <Send className="h-4 w-4" />
         </Button>

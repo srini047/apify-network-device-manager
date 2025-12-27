@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       confidence: data.confidence,
     });
   } catch (error: any) {
-    console.error("[v0] STT Error:", error);
+    console.error("STT Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

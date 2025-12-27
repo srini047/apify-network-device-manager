@@ -104,7 +104,7 @@ export function LandingHero() {
                 <div className="w-2.5 h-2.5 rounded-full bg-green-500/50" />
               </div>
               <span className="text-[10px] font-mono text-zinc-500 ml-2">
-                NetMgr@ssh-orchestrator — 80×24
+                NetManager@ssh-orchestrator — 80×24
               </span>
             </div>
             <div className="p-6 font-mono text-sm text-zinc-400 text-left space-y-2">

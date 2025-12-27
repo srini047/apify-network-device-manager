@@ -25,27 +25,27 @@ export function MongoDBConnector({
   const handleConnect = async () => {
     setLoading(true);
     setError(null);
+
     try {
-      const response = await fetch("/api/mongodb/connect", {
+      // POST to the server-side route which uses the MongoDB Node driver
+      const res = await fetch("/api/mongodb/connect", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ connectionString: uri }),
       });
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Failed to connect");
+      const payload = await res.json();
 
-      const statsResponse = await fetch("/api/mongodb/stats", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ connectionString: uri }),
-      });
-      const statsData = await statsResponse.json();
+      if (!res.ok) {
+        throw new Error(payload?.error || "Failed to connect");
+      }
 
+      // payload.stats should contain { devices: { list: [...] }, collections: { recentRuns: [...] } }
       setConnected(true);
-      onConnect(statsData, uri);
+      onConnect(payload.stats, uri);
     } catch (err: any) {
-      setError(err.message);
+      setError(err?.message || String(err));
+      setConnected(false);
     } finally {
       setLoading(false);
     }
@@ -74,8 +74,10 @@ export function MongoDBConnector({
               value={uri}
               onChange={(e) => setUri(e.target.value)}
               disabled={loading || connected}
+              autoComplete="new-password"
             />
           </div>
+
           <Button
             onClick={handleConnect}
             disabled={loading || !uri || connected}
@@ -85,10 +87,8 @@ export function MongoDBConnector({
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
             ) : connected ? (
               <CheckCircle2 className="h-4 w-4 mr-2" />
-            ) : (
-              "Connect"
-            )}
-            {connected ? "Connected" : "Initialize"}
+            ) : null}
+            {connected ? "Connected" : loading ? "Connecting..." : "Connect"}
           </Button>
         </div>
 

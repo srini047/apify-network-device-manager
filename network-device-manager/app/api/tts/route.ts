@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
       audio_content: data.audio_content,
     });
   } catch (error: any) {
-    console.error("[v0] TTS Error:", error);
+    console.error("TTS Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

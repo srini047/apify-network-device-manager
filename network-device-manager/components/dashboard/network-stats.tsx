@@ -16,34 +16,36 @@ export function NetworkStats({ stats }: { stats: any }) {
   const items = [
     {
       label: "Total Devices",
-      value: stats.devices.total,
-      sub: `${stats.devices.active} Active`,
+      value: stats.devices?.total || 0,
+      sub: `${stats.devices?.active || 0} Active`,
       icon: Server,
       color: "text-primary",
       trend: "up",
     },
     {
       label: "Health Status",
-      value: `${Math.round(
-        (stats.devices.healthy / stats.devices.total) * 100
-      )}%`,
-      sub: `${stats.devices.critical} Critical`,
+      value:
+        stats.devices?.total > 0
+          ? `${Math.round((stats.devices?.healthy / stats.devices?.total) * 100)}%`
+          : "0%",
+      sub: `${stats.devices?.critical || 0} Critical`,
       icon: ShieldAlert,
-      color: stats.devices.critical > 0 ? "text-destructive" : "text-accent",
-      trend: stats.devices.critical > 0 ? "down" : "up",
+      color:
+        (stats.devices?.critical || 0) > 0 ? "text-destructive" : "text-accent",
+      trend: (stats.devices?.critical || 0) > 0 ? "down" : "up",
     },
     {
-      label: "Network Load",
-      value: `${stats.collections.totalProcessed}`,
-      sub: "Total Collections",
+      label: "Data Throughput",
+      value: `${stats.collections?.totalProcessed || 0}`,
+      sub: "Total Snapshots",
       icon: Activity,
       color: "text-accent",
       trend: "up",
     },
     {
-      label: "System Latency",
-      value: `${stats.collections.avgDuration}s`,
-      sub: "Avg. Duration",
+      label: "Capture Performance",
+      value: `${stats.collections?.avgDuration || 0}s`,
+      sub: "Avg. Cycle Time",
       icon: Globe,
       color: "text-primary",
       trend: "down",
