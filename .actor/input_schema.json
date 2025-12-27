@@ -54,7 +54,7 @@
     "commands": {
       "title": "Additional Commands",
       "type": "array",
-      "description": "Additional commands to execute (will be combined with default commands, duplicates removed automatically)",
+      "description": "Additional commands to execute (will be combined with default commands, duplicates removed automatically, not used for tech support collection)",
       "editor": "stringList",
       "placeholderValue": "ps aux",
       "items": {
@@ -83,6 +83,28 @@
       "editor": "textfield",
       "nullable": true,
       "isSecret": true
+    },
+    "techSupportCollection": {
+      "title": "Enable Tech Support Collection",
+      "type": "boolean",
+      "description": "Enable to collect comprehensive tech support data from devices for in-depth analysis. This may include sensitive information, so ensure you have proper authorization before enabling.",
+      "editor": "checkbox",
+      "default": false
+    },
+    "mongdbConnectionString": {
+      "title": "MongoDB Connection String",
+      "type": "string",
+      "description": "[Used only if techSupportCollection is enabled]: MongoDB connection string to store collected data",
+      "editor": "textfield",
+      "nullable": true,
+      "isSecret": true
+    },
+    "mongodDbDatabaseName": {
+      "title": "Database Name",
+      "type": "string",
+      "description": "MongoDB database name",
+      "default": "network_techsupport",
+      "editor": "textfield"
     }
   },
   "required": ["devices"]

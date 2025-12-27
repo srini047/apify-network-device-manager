@@ -12,6 +12,7 @@ from src.actor.command_generator import (
 from src.input.loader import DeviceLoader
 from src.models.result import DeviceResult
 from src.utils.constants import RUN_COMMANDS
+from src.actor.tech_support import run_tech_support_collection
 
 
 async def store_device_summary_table(results: List[DeviceResult]) -> None:
@@ -264,6 +265,9 @@ async def main() -> None:
         problem_description = input_data.get("problemDescription", "")
         exec_warn_commands = input_data.get("includeWarnCommands", False)
         cohere_api_key = input_data.get("cohereApiKey", "")
+        is_tech_support_collection = input_data.get("techSupportCollection", False)
+        mongodb_connection_string = input_data.get("mongdbConnectionString", "")
+        database_name = input_data.get("mongodDbDatabaseName", "network_techsupport")
 
         if not raw_devices:
             Actor.log.error("No devices provided in input")
@@ -275,6 +279,29 @@ async def main() -> None:
 
         for device in devices:
             Actor.log.info(f"  → {device.ip}:{device.port} (user={device.username})")
+
+        # Determine if tech support collection is requested
+        if is_tech_support_collection:
+            Actor.log.info("🔧 Tech Support Collection Mode")
+
+            if not mongodb_connection_string:
+                Actor.log.error("MongoDB connection string is required")
+                return
+
+            try:
+                summary = await run_tech_support_collection(
+                    devices=devices,
+                    mongodb_connection_string=mongodb_connection_string,
+                    database_name=database_name,
+                )
+
+                await Actor.charge(event_name="device-ts-execution", count=len(devices))
+                Actor.log.info("✅ Tech support collection completed")
+                return
+
+            except Exception as e:
+                Actor.log.error(f"❌ Tech support collection failed: {e}")
+                return
 
         # Determine command source: AI-generated or manual
         ai_enabled = False
@@ -295,7 +322,7 @@ async def main() -> None:
             Actor.log.info(f"Adding {len(manual_commands)} manual commands")
             final_commands.extend(manual_commands)
 
-        # Always append default RUN commands irrespective of AI/manual 
+        # Always append default RUN commands irrespective of AI/manual
         final_commands.extend(RUN_COMMANDS)
 
         # Remove duplicate commands while preserving order
