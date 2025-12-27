@@ -17,7 +17,7 @@ export function Navbar() {
         >
           <Shield className="h-6 w-6 text-primary" />
           <span>
-            NetMgr <span className="text-primary">AI</span>
+            NetGuard <span className="text-primary">AI</span>
           </span>
         </Link>
 
@@ -27,6 +27,12 @@ export function Navbar() {
             className="transition-colors hover:text-foreground"
           >
             Dashboard
+          </Link>
+          <Link
+            href="/analytics"
+            className="transition-colors hover:text-foreground"
+          >
+            Analytics
           </Link>
           <Link
             href="/monitor"
