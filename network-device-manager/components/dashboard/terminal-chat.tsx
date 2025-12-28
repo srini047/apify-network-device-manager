@@ -21,48 +21,63 @@ export function TerminalChat({ uri, context }: { uri: string; context: any }) {
   const [recordingLoading, setRecordingLoading] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState("en-IN");
   const [ttsLoading, setTtsLoading] = useState<string | null>(null);
-  const [translationLoading, setTranslationLoading] = useState<string | null>(
-    null
-  );
-  const [translatedMessages, setTranslatedMessages] = useState<
-    Record<string, string>
-  >({});
+  const [translationLoading, setTranslationLoading] = useState<string | null>(null);
+  const [translatedMessages, setTranslatedMessages] = useState<Record<string, string>>({});
+  const [inputValue, setInputValue] = useState(""); // Manual input state
   const scrollOuterRef = useRef<HTMLDivElement | null>(null);
   const scrollInnerRef = useRef<HTMLDivElement | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
 
-  // useChat configuration simplified for maximum reliability
-  const { messages, input, setInput, handleSubmit, isLoading } = useChat({
+  const chatResult = useChat({
     api: "/api/mongodb/query",
     body: { connectionString: uri, context },
     initialMessages: [],
   });
 
-  // Map isLoading to status for compatibility
-  const status = isLoading ? "streaming" : "ready";
+  const { messages, isLoading, error } = chatResult;
+  
+  // Use manual input if setInput is undefined
+  const currentInput = chatResult.setInput ? chatResult.input : inputValue;
+  const updateInput = chatResult.setInput ? chatResult.setInput : setInputValue;
+  
+  // Manual submit handler
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentInput.trim() || isLoading) return;
+    
+    if (chatResult.handleSubmit) {
+      chatResult.handleSubmit(e);
+    } else {
+      // Fallback: manual fetch
+      try {
+        const response = await fetch("/api/mongodb/query", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messages: [...messages, { role: "user", content: currentInput }],
+            connectionString: uri,
+            context,
+          }),
+        });
+        if (!response.ok) throw new Error("Query failed");
+        setInputValue("");
+      } catch (err) {
+        console.error("Query error:", err);
+      }
+    }
+  };
 
   useEffect(() => {
-    // scroll to bottom when messages change
     try {
       const target = scrollInnerRef.current ?? scrollOuterRef.current;
       if (target) {
         target.scrollTop = target.scrollHeight;
       }
     } catch (err) {
-      // ignore scroll errors
-      // console.warn("Scroll error", err);
+      // ignore
     }
   }, [messages]);
-
-  // useEffect(() => {
-  //   console.log(
-  //     "TerminalChat status:",
-  //     status,
-  //     "Input length:",
-  //     input.length 
-  //   );
-  // }, [status, input]);
 
   const startRecording = async () => {
     try {
@@ -84,6 +99,7 @@ export function TerminalChat({ uri, context }: { uri: string; context: any }) {
       setIsRecording(true);
     } catch (err) {
       console.error("Recording error:", err);
+      alert("Microphone access denied.");
     }
   };
 
@@ -92,13 +108,7 @@ export function TerminalChat({ uri, context }: { uri: string; context: any }) {
       if (mediaRecorderRef.current && isRecording) {
         mediaRecorderRef.current.stop();
         setIsRecording(false);
-        try {
-          mediaRecorderRef.current.stream
-            .getTracks()
-            .forEach((track) => track.stop());
-        } catch {
-          /* ignore */
-        }
+        mediaRecorderRef.current.stream.getTracks().forEach((track) => track.stop());
       }
     } catch (err) {
       console.error("Stop recording error:", err);
@@ -116,12 +126,16 @@ export function TerminalChat({ uri, context }: { uri: string; context: any }) {
         method: "POST",
         body: formData,
       });
+      
+      if (!response.ok) throw new Error("STT failed");
+      
       const data = await response.json();
       if (data?.transcript) {
-        setInput(data.transcript);
+        updateInput(data.transcript);
       }
     } catch (err) {
-      console.error("STT process error:", err);
+      console.error("STT error:", err);
+      alert("Speech-to-text failed.");
     } finally {
       setRecordingLoading(false);
     }
@@ -129,7 +143,6 @@ export function TerminalChat({ uri, context }: { uri: string; context: any }) {
 
   const handleTranslate = async (messageId: string, text: string) => {
     if (selectedLanguage === "en-IN") return;
-
     setTranslationLoading(messageId);
     try {
       const locale = selectedLanguage.split("-")[0];
@@ -138,12 +151,12 @@ export function TerminalChat({ uri, context }: { uri: string; context: any }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text, targetLocale: locale }),
       });
+      
+      if (!response.ok) throw new Error("Translation failed");
+      
       const data = await response.json();
       if (data?.translatedText) {
-        setTranslatedMessages((prev) => ({
-          ...prev,
-          [messageId]: data.translatedText,
-        }));
+        setTranslatedMessages((prev) => ({ ...prev, [messageId]: data.translatedText }));
       }
     } catch (err) {
       console.error("Translation error:", err);
@@ -163,6 +176,9 @@ export function TerminalChat({ uri, context }: { uri: string; context: any }) {
           target_language_code: selectedLanguage,
         }),
       });
+      
+      if (!response.ok) throw new Error("TTS failed");
+      
       const data = await response.json();
       if (data?.audio_content) {
         const audio = new Audio(`data:audio/wav;base64,${data.audio_content}`);
@@ -170,6 +186,7 @@ export function TerminalChat({ uri, context }: { uri: string; context: any }) {
       }
     } catch (err) {
       console.error("TTS error:", err);
+      alert("Text-to-speech failed.");
     } finally {
       setTtsLoading(null);
     }
@@ -180,9 +197,7 @@ export function TerminalChat({ uri, context }: { uri: string; context: any }) {
       <div className="flex items-center justify-between px-4 py-2 bg-zinc-900 border-b border-zinc-800">
         <div className="flex items-center gap-2 text-primary">
           <Terminal className="h-4 w-4" />
-          <span className="text-xs font-bold uppercase tracking-widest">
-            Command Center v1.0
-          </span>
+          <span className="text-xs font-bold uppercase tracking-widest">AI Query Terminal</span>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1 text-[10px] text-zinc-500 uppercase">
@@ -203,37 +218,26 @@ export function TerminalChat({ uri, context }: { uri: string; context: any }) {
       </div>
 
       <ScrollArea className="flex-1 p-0" ref={scrollOuterRef as any}>
-        {/* inner container we control scrolling on */}
-        <div
-          ref={scrollInnerRef}
-          className="p-4 space-y-4 overflow-auto h-full"
-        >
+        <div ref={scrollInnerRef} className="p-4 space-y-4 overflow-auto h-full">
           {messages.length === 0 && (
             <div className="text-zinc-600 italic text-xs animate-pulse">
-              {">"} Pipeline connected. Awaiting telemetry queries...
+              {">"} Connected. Ask questions about your MongoDB data...
             </div>
           )}
 
           {messages.map((m: any) => (
-            <div
-              key={m.id}
-              className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
-            >
-              <div
-                className={`max-w-[85%] px-3 py-2 rounded-lg ${
-                  m.role === "user"
-                    ? "bg-primary/10 text-primary border border-primary/20"
-                    : "bg-zinc-900 text-zinc-300 border border-zinc-800"
-                }`}
-              >
+            <div key={m.id} className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}>
+              <div className={`max-w-[85%] px-3 py-2 rounded-lg ${
+                m.role === "user"
+                  ? "bg-primary/10 text-primary border border-primary/20"
+                  : "bg-zinc-900 text-zinc-300 border border-zinc-800"
+              }`}>
                 <div className="flex items-center gap-2 mb-1 opacity-50 text-[10px] uppercase font-bold tracking-tighter">
-                  <span>{m.role === "user" ? "ADMIN" : "AI_CORE"}</span>
+                  <span>{m.role === "user" ? "YOU" : "AI"}</span>
                 </div>
-
                 <div className="text-xs leading-relaxed whitespace-pre-wrap">
                   {translatedMessages[m.id] || m.content}
                 </div>
-
                 {m.role === "assistant" && (
                   <div className="flex gap-2 mt-2">
                     <Button
@@ -242,6 +246,7 @@ export function TerminalChat({ uri, context }: { uri: string; context: any }) {
                       className="h-6 w-6 text-zinc-500 hover:text-primary"
                       onClick={() => handleTTS(m.id, m.content)}
                       disabled={!!ttsLoading}
+                      title="Read aloud"
                     >
                       {ttsLoading === m.id ? (
                         <Loader2 className="h-3 w-3 animate-spin" />
@@ -249,58 +254,45 @@ export function TerminalChat({ uri, context }: { uri: string; context: any }) {
                         <Volume2 className="h-3 w-3" />
                       )}
                     </Button>
-
-                    {selectedLanguage !== "en-IN" &&
-                      !translatedMessages[m.id] && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 text-zinc-500 hover:text-accent"
-                          onClick={() => handleTranslate(m.id, m.content)}
-                          disabled={!!translationLoading}
-                        >
-                          {translationLoading === m.id ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <Languages className="h-3 w-3" />
-                          )}
-                        </Button>
-                      )}
+                    {selectedLanguage !== "en-IN" && !translatedMessages[m.id] && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-zinc-500 hover:text-accent"
+                        onClick={() => handleTranslate(m.id, m.content)}
+                        disabled={!!translationLoading}
+                        title="Translate"
+                      >
+                        {translationLoading === m.id ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Languages className="h-3 w-3" />
+                        )}
+                      </Button>
+                    )}
                   </div>
                 )}
               </div>
             </div>
           ))}
 
-          {(status === "submitted" || status === "streaming") && (
+          {isLoading && (
             <div className="flex items-center gap-2 text-zinc-600">
               <Loader2 className="h-3 w-3 animate-spin" />
-              <span className="text-[10px] uppercase tracking-widest">
-                Processing Query...
-              </span>
+              <span className="text-[10px] uppercase tracking-widest">Processing...</span>
+            </div>
+          )}
+
+          {error && (
+            <div className="text-destructive text-xs p-2 bg-destructive/10 rounded border border-destructive/20">
+              Error: {error.message}
             </div>
           )}
         </div>
       </ScrollArea>
 
       <form
-        onSubmit={async (e) => {
-          e.preventDefault();
-          console.log("Attempting to submit terminal input:", input);
-          if (
-            !input.trim() ||
-            status === "submitted" ||
-            status === "streaming"
-          ) {
-            return;
-          }
-
-          try {
-            await handleSubmit(e);
-          } catch (err: any) {
-            console.log("Submit error:", err.message);
-          }
-        }}
+        onSubmit={handleFormSubmit}
         className="p-3 bg-zinc-950/50 border-t border-zinc-800 flex gap-2"
       >
         <Button
@@ -308,15 +300,13 @@ export function TerminalChat({ uri, context }: { uri: string; context: any }) {
           variant="ghost"
           size="icon"
           className={`h-9 w-9 rounded-full transition-colors ${
-            isRecording
-              ? "text-destructive bg-destructive/10 animate-pulse"
-              : "text-zinc-500 hover:text-primary"
+            isRecording ? "text-destructive bg-destructive/10 animate-pulse" : "text-zinc-500 hover:text-primary"
           }`}
           onMouseDown={startRecording}
           onMouseUp={stopRecording}
           onMouseLeave={stopRecording}
           disabled={recordingLoading}
-          aria-pressed={isRecording}
+          title="Hold to record"
         >
           {recordingLoading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -328,18 +318,18 @@ export function TerminalChat({ uri, context }: { uri: string; context: any }) {
         </Button>
 
         <Input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Enter command or hold Mic for STT..."
+          value={currentInput}
+          onChange={(e) => updateInput(e.target.value)}
+          placeholder="Ask about devices, health, runs..."
           className="flex-1 bg-zinc-950 border-zinc-800 focus:border-primary/50 text-xs h-9"
-          disabled={status === "submitted" || status === "streaming"}
+          disabled={isLoading}
         />
 
         <Button
           type="submit"
           size="icon"
           className="h-9 w-9 bg-primary/20 text-primary hover:bg-primary/30 border border-primary/20"
-          disabled={!(input?.trim()) || status !== "ready"}
+          disabled={!currentInput?.trim() || isLoading}
         >
           <Send className="h-4 w-4" />
         </Button>

@@ -10,6 +10,7 @@ import {
   Link2,
   CheckCircle2,
   AlertCircle,
+  DatabaseIcon
 } from "lucide-react";
 
 export function MongoDBConnector({
@@ -18,6 +19,7 @@ export function MongoDBConnector({
   onConnect: (data: any, uri: string) => void;
 }) {
   const [uri, setUri] = useState("");
+  const [dbName, setDbName] = useState(process.env.MONGODB_DEFAULT_DB || "network_techsupport");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [connected, setConnected] = useState(false);
@@ -31,7 +33,7 @@ export function MongoDBConnector({
       const res = await fetch("/api/mongodb/connect", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ connectionString: uri }),
+        body: JSON.stringify({ connectionString: uri, dbName: dbName }),
       });
 
       const payload = await res.json();
@@ -40,7 +42,6 @@ export function MongoDBConnector({
         throw new Error(payload?.error || "Failed to connect");
       }
 
-      // payload.stats should contain { devices: { list: [...] }, collections: { recentRuns: [...] } }
       setConnected(true);
       onConnect(payload.stats, uri);
     } catch (err: any) {
@@ -64,7 +65,18 @@ export function MongoDBConnector({
           </div>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex flex-col gap-3">
+            <div className="relative">
+            <DatabaseIcon className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground/50" />
+            <Input
+              type="text"
+              placeholder="Optional default value = `network_techsupport`"
+              className="pl-9 bg-background/50 border-border/50 focus:border-primary/50"
+              value={dbName}
+              onChange={(e) => setDbName(e.target.value)}
+              disabled={loading || connected}
+            />
+            </div>
           <div className="relative flex-1">
             <Link2 className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground/50" />
             <Input
