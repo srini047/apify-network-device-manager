@@ -1,48 +1,40 @@
-import { type NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
-    const { text, target_language_code } = await req.json();
+    const { text, targetLocale } = await req.json();
 
-    if (!text) {
-      return NextResponse.json({ error: "Text is required" }, { status: 400 });
-    }
-
-    const sarvamApiKey = process.env.SARVAM_API_KEY;
-    if (!sarvamApiKey) {
+    if (!text || !targetLocale) {
       return NextResponse.json(
-        { error: "Sarvam API key not configured" },
-        { status: 500 }
+        { error: "Text and targetLocale are required" },
+        { status: 400 }
       );
     }
 
-    const response = await fetch("https://api.sarvam.ai/text-to-speech", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "api-subscription-key": sarvamApiKey,
-      },
-      body: JSON.stringify({
-        text,
-        target_language_code: target_language_code || "hi-IN",
-        speaker: "anushka",
-        enable_preprocessing: true,
-      }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || "Sarvam TTS failed");
+    const sarvamApiKey = process.env.SARVAM_API_KEY;
+    if (sarvamApiKey) {
+      // Check if Sarvam has translation API
+      // Otherwise, fall through to mock response
     }
 
-    // Sarvam returns base64 audio in some versions, or a URL.
-    // Assuming base64 content for direct playback.
+    console.log(`Translation requested: "${text}" to ${targetLocale}`);
+
+    // Simple mock - in real app, use proper translation API
+    const mockTranslations: Record<string, string> = {
+      hi: `[HI] ${text}`,
+      gu: `[GU] ${text}`,
+      mr: `[MR] ${text}`,
+    };
+
     return NextResponse.json({
-      audio_content: data.audio_content,
+      translatedText: mockTranslations[targetLocale] || text,
+      note: "Using mock translation - integrate real API for production",
     });
   } catch (error: any) {
-    console.error("TTS Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("Translation error:", error);
+    return NextResponse.json(
+      { error: error.message || "Translation failed" },
+      { status: 500 }
+    );
   }
 }

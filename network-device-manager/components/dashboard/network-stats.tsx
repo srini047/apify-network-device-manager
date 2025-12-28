@@ -13,30 +13,36 @@ import {
 export function NetworkStats({ stats }: { stats: any }) {
   if (!stats) return null;
 
+  const totalDevices = stats.devices?.total || 0;
+  const activeDevices = stats.devices?.active || 0;
+  const healthyDevices = stats.devices?.healthy || 0;
+  const criticalDevices = stats.devices?.critical || 0;
+  const totalProcessed = stats.collections?.totalProcessed || 0;
+  const avgDuration = stats.collections?.avgDuration || 0;
+
+  const healthPercentage =
+    totalDevices > 0 ? Math.round((healthyDevices / totalDevices) * 100) : 0;
+
   const items = [
     {
       label: "Total Devices",
-      value: stats.devices?.total || 0,
-      sub: `${stats.devices?.active || 0} Active`,
+      value: totalDevices,
+      sub: `${activeDevices} Active`,
       icon: Server,
       color: "text-primary",
       trend: "up",
     },
     {
       label: "Health Status",
-      value:
-        stats.devices?.total > 0
-          ? `${Math.round((stats.devices?.healthy / stats.devices?.total) * 100)}%`
-          : "0%",
-      sub: `${stats.devices?.critical || 0} Critical`,
+      value: `${healthPercentage}%`,
+      sub: `${criticalDevices} Critical`,
       icon: ShieldAlert,
-      color:
-        (stats.devices?.critical || 0) > 0 ? "text-destructive" : "text-accent",
-      trend: (stats.devices?.critical || 0) > 0 ? "down" : "up",
+      color: criticalDevices > 0 ? "text-destructive" : "text-accent",
+      trend: criticalDevices > 0 ? "down" : "up",
     },
     {
       label: "Data Throughput",
-      value: `${stats.collections?.totalProcessed || 0}`,
+      value: `${totalProcessed}`,
       sub: "Total Snapshots",
       icon: Activity,
       color: "text-accent",
@@ -44,7 +50,7 @@ export function NetworkStats({ stats }: { stats: any }) {
     },
     {
       label: "Capture Performance",
-      value: `${stats.collections?.avgDuration || 0}s`,
+      value: `${avgDuration}s`,
       sub: "Avg. Cycle Time",
       icon: Globe,
       color: "text-primary",
