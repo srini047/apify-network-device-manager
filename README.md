@@ -549,7 +549,7 @@ Problems Faced and Resolution
 - Keeping the command executable irrespective of the Linux Distro
 - Stats Not Updating from MongoDB (Translated TS to Python, found RC in just 5 lines of code)
 - Vercel Deployment (Not been successfuly though `npm run build` works fine locally. The reason for this friction is definitely the project structure i.e. using a Next.JS framework for a Python <> Apify codebase)
-- Interact with TS Collect Data (Speak, Text, MultiLingual WIP - For sure will be doable with some more)
+- Interact with TS Collect Data (Speak, Text, MultiLingual WIP - For sure will be doable with some more -> For a workaround used MCP still works fine for now.)
 
 License
 -------

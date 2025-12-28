@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Shield, Sun, Moon } from "lucide-react";
+import { Shield, Sun, Moon, MoveRight } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 
@@ -54,7 +54,10 @@ export function Navbar() {
             <span className="sr-only">Toggle theme</span>
           </Button>
           <Button asChild className="hidden sm:flex">
-            <Link href="/dashboard">Launch App</Link>
+            <Link href="/dashboard">
+            Run Actor
+            <MoveRight/>
+          </Link>
           </Button>
         </div>
       </div>
