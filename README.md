@@ -530,6 +530,27 @@ Troubleshooting
 - Check API quota/rate limits
 - Falls back to manual commands on failure
 
+Future Scope
+------------
+
+| Feature | Current | Future Scope 1 | Future Scope 2 | Future Scope 3 |
+|---------|---------|----------------|----------------|----------------|
+| **Detection** | Static thresholds | ML anomaly detection | Real-time dashboard | Automated remediation |
+| **Response** | Manual | Predictive alerts | Visual alerts | Auto-fix with approval |
+| **Value** | Basic monitoring | Proactive maintenance | Better visibility | Self-healing infrastructure |
+| **Effort** | - | Medium (ML training) | High (full dashboard) | High (playbook engine) |
+| **Impact** | - | High (prevent outages) | Medium (UX improvement) | Very High (reduce MTTR) |
+
+
+Problems Faced and Resolution
+-----------------------------
+- Apify Actor O/P schema rendering (Friction is high as compared to Input Schema)
+- Keeping Code Readable/Reusable (Interaction with Clients (MongoDB, Cohere, etc...) => Made use of Singleton Design Pattern, Used Pydantic & TS types whereever applicable)
+- Keeping the command executable irrespective of the Linux Distro
+- Stats Not Updating from MongoDB (Translated TS to Python, found RC in just 5 lines of code)
+- Vercel Deployment (Not been successfuly though `npm run build` works fine locally. The reason for this friction is definitely the project structure i.e. using a Next.JS framework for a Python <> Apify codebase)
+- Interact with TS Collect Data (Speak, Text, MultiLingual WIP - For sure will be doable with some more)
+
 License
 -------
 
