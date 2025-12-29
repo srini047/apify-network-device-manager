@@ -41,7 +41,7 @@ export function LandingHero() {
           </h1>
           <div className="mt-8 flex flex-col items-center gap-4">
             <p className="max-w-2xl text-pretty text-lg font-medium text-muted-foreground sm:text-xl/8">
-              A high-performance Apify Actor built for modern DevOps. Seamlessly
+              A high-performance Apify Actor built for modern Net Admin. Seamlessly
               execute diagnostic workflows across hundreds of devices with
               Python-powered SSH orchestration.
             </p>
@@ -60,6 +60,12 @@ export function LandingHero() {
               </span>
               <span className="px-3 py-1 rounded-full bg-muted text-[10px] font-mono border border-border/50">
                 NextJS
+              </span>
+              <span className="px-3 py-1 rounded-full bg-muted text-[10px] font-mono border border-border/50">
+                MongoDB
+              </span>
+              <span className="px-3 py-1 rounded-full bg-muted text-[10px] font-mono border border-border/50">
+                MCP
               </span>
             </div>
           </div>
