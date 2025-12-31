@@ -1,6 +1,9 @@
 Network Device Manager with AI Command Generation & Tech Support Collection
 ======================================
 
+<img width="512" height="512" alt="Apify Network Device Manager" src="https://github.com/user-attachments/assets/003bbf68-2b26-4782-987e-a914568de052" />
+
+
 An Apify Actor for managing and monitoring network devices with optional AI-powered diagnostic command generation using Cohere, plus comprehensive tech support data collection with MongoDB storage.
 
 Features
